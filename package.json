@@ -1,0 +1,15 @@
+{
+  "name": "echarts-practice",
+  "version": "1.0.0",
+  "description": "practice",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Shadow",
+  "license": "ISC",
+  "dependencies": {
+    "echarts": "^3.5.4",
+    "echarts-gl": "^1.0.0-alpha.3"
+  }
+}
