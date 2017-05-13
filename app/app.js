@@ -1,18 +1,16 @@
-'use strict';
-require('angular');
+import angular from 'angular';
+import 'angular-route';
+import 'angular-material';
 
-
-(function () {
-  require('angular-route');
-  require('angular-material');
-  // Declare app level module which depends on views, and components
-  angular.module('myApp', [
-    'ngRoute',
-    'ngMaterial'
-  ]).
-  config(['$locationProvider', '$routeProvider', function($locationProvider, $routeProvider) {
+let echartsPracticeApp = angular.module('echartsPracticeApp', [
+  'ngRoute',
+  'ngMaterial'
+])
+  .config(['$locationProvider', '$routeProvider', function($locationProvider, $routeProvider) {
     $locationProvider.hashPrefix('!');
 
     $routeProvider.otherwise({redirectTo: '/'});
   }]);
-})
+
+global.echartsPracticeApp = echartsPracticeApp;
+
