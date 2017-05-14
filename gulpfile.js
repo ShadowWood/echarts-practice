@@ -1,47 +1,84 @@
-const path = require('path');
-const gulp = require('gulp');
-const concat = require('gulp-concat');
-const sourcemaps = require('gulp-sourcemaps');
-const uglify = require('gulp-uglify');
-const ngAnnotate = require('gulp-ng-annotate');
-const gulpWebpack = require('gulp-webpack');
-const webpack = require('webpack');
-const gutil = require('gulp-util');
-const WebpackDevServer = require('webpack-dev-server');
-const webpackConfig = require('./webpack.config');
+var gulp = require("gulp");
+var gutil = require("gulp-util");
+var webpack = require("webpack");
+var WebpackDevServer = require("webpack-dev-server");
+var webpackConfig = require("./webpack.config.js");
 
-const resolve = (dirname) => path.resolve(__dirname, dirname);
+// The development server (the recommended option for development)
+gulp.task("default", ["webpack-dev-server"]);
 
-gulp.task('build', function () {
-  let config = Object.create(webpackConfig);
-  gulp.src('app/app.js')
-    .pipe(gulpWebpack(config))
-    .pipe(gulp.dest('dist/'))
-    // .pipe(sourcemaps.init())
-    // .pipe(ngAnnotate())
-    // .pipe(uglify())
-    // .pipe(sourcemaps.write())
-    // .pipe(gulp.dest('dist/bundle.min.js'))
-})
-
-gulp.task("server", function(callback) {
-  // Start a webpack-dev-server
-  var config = Object.create(webpackConfig);
-  var compiler = webpack(config);
-  new WebpackDevServer(compiler, {
-    publicPath: "/" + config.output.publicPath,
-    stats: {
-      colors: true
-    },
-    hot: true
-  }).listen(8080, "localhost", function(err) {
-    if(err) throw new gutil.PluginError("webpack-dev-server", err);
-    // Server listening
-    gutil.log("[webpack-dev-server]", "http://localhost:8080/index.html");
-
-    // keep the server alive or continue?
-    // callback();
-  });
+// Build and watch cycle (another option for development)
+// Advantage: No server required, can run app from filesystem
+// Disadvantage: Requests are not blocked until bundle is available,
+//               can serve an old app on refresh
+gulp.task("build-dev", ["webpack:build-dev"], function() {
+	gulp.watch(["app/**/*"], ["webpack:build-dev"]);
 });
 
-gulp.task('default', ['build', 'server'])
+// Production build
+gulp.task("build", ["webpack:build"]);
+
+gulp.task("webpack:build", function(callback) {
+	// modify some webpack config options
+	var myConfig = Object.create(webpackConfig);
+	myConfig.plugins = (myConfig.plugins || []).concat(
+		new webpack.DefinePlugin({
+			"process.env": {
+				// This has effect on the react lib size
+				"NODE_ENV": JSON.stringify("production")
+			}
+		}),
+		new webpack.optimize.UglifyJsPlugin()
+	);
+
+	// run webpack
+	webpack(myConfig, function(err, stats) {
+		if(err) throw new gutil.PluginError("webpack:build", err);
+		gutil.log("[webpack:build]", stats.toString({
+			colors: true
+		}));
+		callback();
+	});
+});
+
+gulp.task("webpack:build-dev", function(callback) {
+	// run webpack
+  // modify some webpack config options
+  var myDevConfig = Object.create(webpackConfig);
+  myDevConfig.devtool = "sourcemap";
+  myDevConfig.plugins = (myConfig.plugins || []).concat(
+    new webpack.LoaderOptionsPlugin({
+      debug: true
+    })
+  )
+  // create a single instance of the compiler to allow caching
+  var devCompiler = webpack(myDevConfig);
+	devCompiler.run(function(err, stats) {
+		if(err) throw new gutil.PluginError("webpack:build-dev", err);
+		gutil.log("[webpack:build-dev]", stats.toString({
+			colors: true
+		}));
+		callback();
+	});
+});
+
+gulp.task("webpack-dev-server", function(callback) {
+	// modify some webpack config options
+	var myConfig = Object.create(webpackConfig);
+	myConfig.devtool = "eval";
+  myConfig.plugins = (myConfig.plugins || []).concat(
+    new webpack.LoaderOptionsPlugin({
+      debug: true
+    })
+  );
+	// Start a webpack-dev-server
+	new WebpackDevServer(webpack(myConfig), {
+		publicPath: "/dist",
+		stats: {
+			colors: true
+		}
+	}).listen(8080, "localhost", function(err) {
+		if(err) throw new gutil.PluginError("webpack-dev-server", err);
+		gutil.log("[webpack-dev-server]", "http://localhost:8080/index.html");
+	});
+});

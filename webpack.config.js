@@ -18,8 +18,14 @@ module.exports = {
       },
       {
         test: /\.js$/,
-        loader: 'babel-loader',
-        exclude: /node_modules/
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: ['es2015'],
+            plugins: ['transform-runtime']
+          }
+        }
       },
       {
         test: /\.(png|jpg|gif|svg)$/,
@@ -39,6 +45,7 @@ module.exports = {
   },
   devtool: '#inline-source-map'
 }
+
 
 if (process.env.NODE_ENV === 'production') {
   module.exports.devtool = '#source-map'
